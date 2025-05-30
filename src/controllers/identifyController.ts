@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { db } from "../app";
+import { db } from "../config/db";
 
 export interface Contact {
   id: number;
