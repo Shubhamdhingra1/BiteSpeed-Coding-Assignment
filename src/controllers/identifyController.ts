@@ -27,9 +27,8 @@ export const identifyContact = async (req: Request, res: Response) => {
     const allEmails = new Set<string>();
     const allPhones = new Set<string>();
 
-    let primary: any = null;
+    let primary: Contact | null = null;
 
-    // Find earliest created primary contact
     for (const contact of existingContacts) {
       if (contact.linkPrecedence === "primary") {
         if (!primary || contact.createdAt < primary.createdAt) {
@@ -43,7 +42,7 @@ export const identifyContact = async (req: Request, res: Response) => {
     }
 
     if (!primary) {
-      // No related contact found → create new primary
+      // Insert new primary contact
       const [result]: any = await db.query(
         `INSERT INTO Contact (email, phoneNumber, linkPrecedence) VALUES (?, ?, 'primary')`,
         [email, phoneNumber]
@@ -51,27 +50,26 @@ export const identifyContact = async (req: Request, res: Response) => {
       return res.status(200).json({
         contact: {
           primaryContactId: result.insertId,
-          emails: [email],
-          phoneNumbers: [phoneNumber],
+          emails: [email].filter(Boolean),
+          phoneNumbers: [phoneNumber].filter(Boolean),
           secondaryContactIds: [],
         },
       });
     }
 
-    // Add info to sets
-    existingContacts.forEach((c:Contact) => {
+    existingContacts.forEach((c: Contact) => {
       if (c.email) allEmails.add(c.email);
       if (c.phoneNumber) allPhones.add(c.phoneNumber);
-      if (c.id !== primary.id) allContactIds.add(c.id);
+      if (c.id !== primary!.id) allContactIds.add(c.id);
     });
+
     if (primary.email) allEmails.add(primary.email);
     if (primary.phoneNumber) allPhones.add(primary.phoneNumber);
 
     const isNew = !existingContacts.some(
-      (c:Contact) => c.email === email && c.phoneNumber === phoneNumber
+      (c: Contact) => c.email === email && c.phoneNumber === phoneNumber
     );
 
-    // If new combination, insert as secondary
     if (isNew) {
       const [inserted]: any = await db.query(
         `INSERT INTO Contact (email, phoneNumber, linkPrecedence, linkedId) VALUES (?, ?, 'secondary', ?)`,
@@ -95,4 +93,3 @@ export const identifyContact = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
