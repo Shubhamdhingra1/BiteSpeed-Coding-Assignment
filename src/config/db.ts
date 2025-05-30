@@ -1,11 +1,17 @@
-import mysql from "mysql2/promise";
-import dotenv from "dotenv";
+
+import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
+
 dotenv.config();
-export const getConnectionString = () => {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL is not defined");
-  }
-  return process.env.DATABASE_URL;
-};
-export const connectionString=process.env.DATABASE_URL || "";
-export const db = mysql.createPool(getConnectionString());
+export const connectionString= `mysql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
+
+export const db = mysql.createPool({
+  host: process.env.DB_HOST || 'localhost',
+  port: Number(process.env.DB_PORT) || 3306,
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'test',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+});
