@@ -7,5 +7,5 @@ export const getConnectionString = () => {
   }
   return process.env.DATABASE_URL;
 };
-
+export const connectionString=process.env.DATABASE_URL || "";
 export const db = mysql.createPool(getConnectionString());
